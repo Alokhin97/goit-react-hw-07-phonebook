@@ -1,26 +1,35 @@
-import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-import { addContact } from 'redux/contactsSlice';
-import { getContacts } from 'redux/selectors';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import styles from "./ContactForm.module.css";
 
- const ContactForm = () => {
-  const dispatch = useDispatch();
-  const contacts = useSelector(getContacts);
+import {
+  useAddContactMutation,
+  useGetContactsQuery,
+} from 'redux/contactsSlice';
 
-  const handleSubmit = e => {
+const ContactForm = () => {
+  const [addContact] = useAddContactMutation();
+  const { data } = useGetContactsQuery();
+
+  const handleSubmit = async e => {
     e.preventDefault();
     const form = e.target;
     const name = form.elements.name.value;
     const number = form.elements.number.value;
+    const contactData = { name, number };
     form.reset();
-    if (contacts.value.find(contact => contact.name === name)) {
-      alert(`${name} is already in contacts`);
+    if (data.find(contact => contact.name === name)) {
+      Notify.warning(`${name} is already in contacts`);
       return false;
     }
-    dispatch(addContact(name, number));
-    return true;
+    try {
+      await addContact(contactData);
+      Notify.success('Contact was added to your phonebook');
+    } catch (error) {
+      Notify.failure('Something wrong. Please, try again');
+    }
   };
+
     return (
       <form className={styles.Editor} onSubmit={handleSubmit} autoComplete="off">
         <label className={styles.Editor_label}>
